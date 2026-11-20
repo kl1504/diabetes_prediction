@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Estimer le risque de diabète</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink:  "#12303B",   // texte principal
+            sea:  { 500: "#177A90", 600: "#0F5C6E", 700: "#0B4857" }, // action
+            mist: "#EEF3F5",   // fond de page
+            line: "#D3DFE4",   // bordures
+            ok:   "#2F8F6B",   // risque faible
+            warn: "#D4472B",   // risque élevé
+          },
+          fontFamily: {
+            display: ["Bricolage Grotesque", "system-ui", "sans-serif"],
+            sans: ["Instrument Sans", "system-ui", "sans-serif"],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style type="text/tailwindcss">
+    @layer components {
+      .field-label { @apply block text-sm font-semibold text-ink; }
+      .field-hint  { @apply mt-0.5 block text-xs text-ink/60; }
+      .field-input {
+        @apply mt-2 w-full rounded-lg border border-line bg-white px-3.5 py-2.5 text-base text-ink
+               placeholder:text-ink/30 transition-colors
+               hover:border-sea-500/60
+               focus:border-sea-600 focus:outline-none focus:ring-2 focus:ring-sea-500/30;
+      }
+      .group-title { @apply font-display text-lg font-bold text-ink; }
+    }
+  </style>
+</head>
+
+<body class="min-h-screen bg-mist font-sans text-ink antialiased">
+
+  <!-- En-tête -->
+  <header class="border-b border-line bg-white">
+    <div class="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
+      <span class="font-display text-xl font-bold tracking-tight text-sea-700">Glycémie</span>
+      <span class="text-sm text-ink/60">Modèle entraîné sur la base Pima Indians</span>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-6xl px-5 py-10 lg:py-14">
+
+    <div class="max-w-2xl">
+      <h1 class="font-display text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
+        Entrez 8 mesures, obtenez une estimation du risque de diabète.
+      </h1>
+      <p class="mt-4 text-lg leading-relaxed text-ink/70">
+        Le modèle compare vos valeurs à celles de patientes de la base Pima.
+        C'est un outil d'apprentissage, pas un diagnostic.
+      </p>
+    </div>
+
+    <div class="mt-10 grid gap-8 lg:grid-cols-[1fr_380px] lg:items-start">
+
+      <!-- Formulaire -->
+      <form id="form" class="rounded-2xl border border-line bg-white p-6 sm:p-8" novalidate>
+
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <p class="text-sm text-ink/60">Pas de valeurs sous la main ?</p>
+          <button type="button" id="fill-example"
+            class="rounded-lg border border-line px-3.5 py-2 text-sm font-semibold text-sea-700 transition-colors hover:bg-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sea-500/40">
+            Remplir un exemple
+          </button>
+        </div>
+
+        <!-- Groupe : profil -->
+        <fieldset class="mt-8">
+          <legend class="group-title">Profil</legend>
+          <div class="mt-4 grid gap-5 sm:grid-cols-2">
+            <div>
+              <label for="Age" class="field-label">Âge</label>
+              <span class="field-hint">En années</span>
+              <input id="Age" type="number" inputmode="numeric" min="1" max="120" step="1" placeholder="45" required class="field-input">
+            </div>
+            <div>
+              <label for="Pregnancies" class="field-label">Grossesses</label>
+              <span class="field-hint">Nombre de grossesses</span>
+              <input id="Pregnancies" type="number" inputmode="numeric" min="0" max="20" step="1" placeholder="2" required class="field-input">
+            </div>
+            <div class="sm:col-span-2">
+              <label for="DiabetesPedigreeFunction" class="field-label">Antécédents familiaux</label>
+              <span class="field-hint">Indice d'hérédité du diabète, en général entre 0,08 et 2,5</span>
+              <input id="DiabetesPedigreeFunction" type="number" inputmode="decimal" min="0" max="3" step="any" placeholder="0.5" required class="field-input sm:max-w-xs">
+            </div>
+          </div>
+        </fieldset>
+
+        <hr class="my-8 border-line">
+
+        <!-- Groupe : analyses -->
+        <fieldset>
+          <legend class="group-title">Analyses de sang</legend>
+          <div class="mt-4 grid gap-5 sm:grid-cols-2">
+            <div>
+              <label for="Glucose" class="field-label">Glucose</label>
+              <span class="field-hint">mg/dL, à jeun ou après test oral</span>
+              <input id="Glucose" type="number" inputmode="decimal" min="0" max="300" step="any" placeholder="150" required class="field-input">
+            </div>
+            <div>
+              <label for="Insulin" class="field-label">Insuline</label>
+              <span class="field-hint">µU/mL, 2 heures après le repas</span>
+              <input id="Insulin" type="number" inputmode="decimal" min="0" max="900" step="any" placeholder="100" required class="field-input">
+            </div>
+          </div>
+        </fieldset>
+
+        <hr class="my-8 border-line">
+
+        <!-- Groupe : corps -->
+        <fieldset>
+          <legend class="group-title">Mesures du corps</legend>
+          <div class="mt-4 grid gap-5 sm:grid-cols-3">
+            <div>
+              <label for="BMI" class="field-label">IMC</label>
+              <span class="field-hint">kg/m²</span>
+              <input id="BMI" type="number" inputmode="decimal" min="0" max="70" step="any" placeholder="33.6" required class="field-input">
+            </div>
+            <div>
+              <label for="BloodPressure" class="field-label">Tension</label>
+              <span class="field-hint">mm Hg, diastolique</span>
+              <input id="BloodPressure" type="number" inputmode="decimal" min="0" max="200" step="any" placeholder="70" required class="field-input">
+            </div>
+            <div>
+              <label for="SkinThickness" class="field-label">Pli cutané</label>
+              <span class="field-hint">mm, au triceps</span>
+              <input id="SkinThickness" type="number" inputmode="decimal" min="0" max="100" step="any" placeholder="30" required class="field-input">
+            </div>
+          </div>
+        </fieldset>
+
+        <p class="mt-8 rounded-lg bg-mist px-4 py-3 text-sm leading-relaxed text-ink/70">
+          Une valeur inconnue pour le glucose, l'insuline, l'IMC, la tension ou le pli cutané ?
+          Saisissez 0 : le modèle la traite comme une donnée manquante.
+        </p>
+
+        <div class="mt-8 flex flex-wrap items-center gap-3">
+          <button type="submit" id="submit"
+            class="rounded-lg bg-sea-600 px-6 py-3 text-base font-semibold text-white transition-colors hover:bg-sea-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sea-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60">
+            Estimer le risque
+          </button>
+          <button type="reset" id="reset"
+            class="rounded-lg px-4 py-3 text-base font-semibold text-ink/70 transition-colors hover:bg-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sea-500/40">
+            Effacer
+          </button>
+        </div>
+      </form>
+
+      <!-- Résultat -->
+      <aside class="lg:sticky lg:top-6" aria-live="polite">
+        <div class="rounded-2xl border border-line bg-white p-6 sm:p-8">
+          <h2 class="group-title">Résultat</h2>
+
+          <!-- État : vide -->
+          <div id="state-empty" class="mt-4">
+            <p class="leading-relaxed text-ink/70">
+              Remplissez le formulaire puis lancez l'estimation. Le résultat s'affiche ici.
+            </p>
+          </div>
+
+          <!-- État : chargement -->
+          <div id="state-loading" class="mt-4 hidden">
+            <div class="flex items-center gap-3 text-ink/70">
+              <svg class="h-5 w-5 animate-spin text-sea-600 motion-reduce:animate-none" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-opacity=".25" stroke-width="3"/>
+                <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+              </svg>
+              Calcul en cours…
+            </div>
+          </div>
+
+          <!-- État : résultat -->
+          <div id="state-result" class="mt-4 hidden">
+            <p id="result-label" class="font-display text-2xl font-bold leading-snug"></p>
+
+            <p class="mt-5 flex items-baseline gap-2">
+              <span id="result-percent" class="font-display text-6xl font-bold tabular-nums leading-none"></span>
+              <span class="text-sm text-ink/60">de probabilité estimée</span>
+            </p>
+
+            <!-- Échelle de risque -->
+            <div class="mt-6">
+              <div class="relative h-3 rounded-full bg-gradient-to-r from-ok via-amber-400 to-warn">
+                <!-- seuil à 50 % -->
+                <span class="absolute left-1/2 top-[-4px] h-5 w-px bg-ink/50" aria-hidden="true"></span>
+                <!-- curseur -->
+                <span id="result-marker"
+                  class="absolute top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-white bg-ink shadow transition-[left] duration-700 motion-reduce:transition-none"
+                  style="left: 0%"></span>
+              </div>
+              <div class="mt-2 flex justify-between text-xs text-ink/60">
+                <span>Peu probable</span>
+                <span>Seuil 50 %</span>
+                <span>Probable</span>
+              </div>
+            </div>
+
+            <p id="result-advice" class="mt-6 text-sm leading-relaxed text-ink/70"></p>
+          </div>
+
+          <!-- État : erreur -->
+          <div id="state-error" class="mt-4 hidden rounded-lg border border-warn/30 bg-warn/5 p-4">
+            <p class="font-semibold text-warn">Impossible d'obtenir une réponse</p>
+            <p id="error-message" class="mt-1 text-sm leading-relaxed text-ink/70"></p>
+          </div>
+        </div>
+
+        <p class="mt-4 px-1 text-xs leading-relaxed text-ink/60">
+          Cette estimation ne remplace pas l'avis d'un médecin. En cas de doute sur votre glycémie,
+          consultez un professionnel de santé.
+        </p>
+      </aside>
+    </div>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
