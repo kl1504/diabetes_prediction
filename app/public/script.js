@@ -42,7 +42,7 @@ $("reset").addEventListener("click", () => {
 $("form").addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  // Validation simple : champs vides
+  // Validation simple : champs vides ou négatifs
   const data = {};
   let firstInvalid = null;
   FIELDS.forEach((f) => {
@@ -72,12 +72,17 @@ $("form").addEventListener("submit", async (e) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    if (!response.ok) throw new Error("Erreur " + response.status);
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body.error || "Erreur serveur " + response.status);
+    }
+
     const result = await response.json();
     displayResult(result);
   } catch (err) {
-    $("error-message").textContent =
-      "L'API ne répond pas. Vérifiez que « python app.py » est lancé, puis réessayez.";
+    console.error(err);
+    $("error-message").textContent = "Détail : " + err.message;
     showState("state-error");
   } finally {
     button.disabled = false;
